@@ -19,6 +19,19 @@
 
 "use strict";
 
+function bugsenseWrapper(func, name) {
+  return function() {
+    try {
+      return func.apply(this, arguments);
+    } catch (e) {
+      try {
+        Bugsense.leaveBreadcrumb("Exception in " + name);
+        Bugsense.notify(e);
+      } catch(ignore) { }
+    }
+  };
+}
+
 var ReactErrorUtils = {
   /**
    * Creates a guarded version of a function. This is supposed to make debugging
@@ -30,6 +43,11 @@ var ReactErrorUtils = {
    * @return {function}
    */
   guard: function(func, name) {
+    if (window.config
+          && window.config.production
+          && window.config.production.bugsense_enabled) {
+      return bugsenseWrapper(func, name);
+    }
     return func;
   }
 };
